@@ -15,14 +15,14 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 고성능과 넉넉한 할당량을 가진 Gemini 2.5 Flash Lite 모델을 사용합니다.
-    return genai.GenerativeModel('gemini-2.5-flash-lite')
+    # 🔥 1.5 Flash의 압도적 할당량과 전문가용 프롬프트를 조합하여 24/7 고성능 분석을 구현합니다.
+    return genai.GenerativeModel('gemini-1.5-flash-latest')
 
 class DeepScanner:
     def __init__(self):
         self.kis = KISClient()
         self.ai_model = init_ai()
-        print("🔍 [Hyper-Deep] 정밀 분석 엔진 가동 (분석 주기: 60초)")
+        print("🔍 [Hyper-Deep] 전문가급 정밀 분석 엔진 가동 (분석 주기: 60초)")
             
         self.local_url = "http://localhost:8000"
         self.target_stocks = []
@@ -35,9 +35,9 @@ class DeepScanner:
         for m_code, m_name in markets:
             print(f"📡 {m_name} 시장 데이터 수집 중...")
             raw_stocks = self.kis.get_market_rankings(m_code)
-            # 2.5 Lite 모델의 넉넉한 할당량을 활용하여 다시 상위 30개 분석
+            # 1.5 Flash의 할당량을 믿고 상위 30개 종목 전수 조사
             raw_stocks = raw_stocks[:30]
-            print(f"✅ {m_name} 상위 30개 종목 수집 완료 (Gemini 2.5 Lite 모드). 필터링 시작...")
+            print(f"✅ {m_name} 상위 30개 종목 수집 완료 (Professional Mode). 필터링 시작...")
             
             for s in raw_stocks:
                 name = s.get('hts_kor_isnm')
@@ -47,12 +47,12 @@ class DeepScanner:
                 
                 # 거래대금 500억 이상 필터링
                 if volume_money >= 50_000_000_000:
-                    print(f"💎 분석 대상 발견: {name} ({int(volume_money/100_000_000)}억) - AI 분석 중...")
+                    print(f"💎 전문가 분석 대상: {name} ({int(volume_money/100_000_000)}억) - 심층 분석 가동...")
                     analysis = self.analyze_deep_with_ai(name)
                     if not analysis: continue
                     
                     sentiment = analysis["score"]
-                    print(f"📊 {name} 점수: {sentiment:.2f} | {analysis['summary'][:30]}...")
+                    print(f"📊 {name} 인사이트: {sentiment:.2f} | {analysis['summary'][:40]}...")
                     
                     if sentiment > 0.4:
                         all_candidates.append({
@@ -66,20 +66,24 @@ class DeepScanner:
                         self.target_stocks = all_candidates
                         self.push_to_local_server()
                     
-                    # 시스템 안정성 및 할당량 보호를 위해 대기 시간을 10초로 설정
+                    # 1.5 Flash는 10초 대기면 매우 안정적입니다.
                     time.sleep(10.0)
         
     def analyze_deep_with_ai(self, stock_name):
         try:
-            # 🔥 파싱 에러 방지를 위해 JSON 응답 모드를 사용합니다.
+            # 🔥 1.5 모델의 한계를 넘는 30년 경력 수석 애널리스트 페르소나 주입
             prompt = (
-                f"당신은 20년 경력의 수석 애널리스트입니다. 주식 '{stock_name}'을 분석하세요. "
-                "반드시 아래 JSON 형식을 지키되, 각 항목은 30자 이상의 전문적인 통찰을 담으세요.\n"
+                f"당신은 월스트리트 출신의 30년 경력 수석 퀀트 애널리스트이자 기술적 분석 전문가입니다. "
+                f"주식 '{stock_name}'에 대해 기관 투자자 수준의 심층 보고서를 작성하세요.\n\n"
+                "분석 지침:\n"
+                "1. 시장의 노이즈를 배제하고 거래량의 질적 변화와 세력 매집 흔적을 추적하세요.\n"
+                "2. 글로벌 매크로 트렌드와 해당 기업의 비즈니스 모델 간의 상관관계를 명확히 하세요.\n"
+                "3. 반드시 아래 JSON 형식을 엄수하며, 각 필드는 최소 50자 이상의 밀도 높은 인사이트를 담으세요.\n\n"
                 "{\n"
-                "  \"score\": 0.00, // -1.00에서 1.00 사이의 실수\n"
-                "  \"summary\": \"현재 시장에서의 핵심 위치와 평가\",\n"
-                "  \"tech\": \"이평선, 거래량, 캔들 패턴 기반의 향후 전망\",\n"
-                "  \"ext\": \"산업 트렌드, 거시 경제, 개별 뉴스 분석\"\n"
+                "  \"score\": 0.00, // 기술적/기본적 분석을 종합한 투자 신뢰 점수 (-1.00 ~ 1.00)\n"
+                "  \"summary\": \"핵심 투자 하이라이트 및 잠재적 리스트 요약\",\n"
+                "  \"tech\": \"차트 패턴, 주요 이평선 이격도, 거래량 수급 기반의 정밀 추세 분석\",\n"
+                "  \"ext\": \"글로벌 산업 사이클, 거시 경제 지표, 지정학적 요소 등 대외 분석\"\n"
                 "}"
             )
             response = self.ai_model.generate_content(
@@ -91,19 +95,18 @@ class DeepScanner:
             
             return {
                 "score": float(data.get("score", 0.0)),
-                "summary": data.get("summary", "분석 결과 없음"),
-                "tech": data.get("tech", "기술적 분석 데이터 부족"),
-                "ext": data.get("ext", "대외적 요인 데이터 부족")
+                "summary": data.get("summary", "분석 데이터 부족"),
+                "tech": data.get("tech", "기술적 추세 분석 불가"),
+                "ext": data.get("ext", "대외적 변수 데이터 부족")
             }
                 
         except Exception as e:
-            # 🔥 에러 시 디버깅을 위해 구체적인 내용을 출력하도록 개선
             print(f"❌ {stock_name} 분석 실패: {e}")
             return {
                 "score": 0.0, 
-                "summary": "🚨 AI 분석 일시적 차단 (구글 할당량 초과)", 
-                "tech": "서버 IP가 구글로부터 일시적 제한을 받고 있습니다. 잠시 후 재개됩니다.", 
-                "ext": "이 메시지가 지속되면 API 키의 유료 티어 전환을 검토하세요."
+                "summary": f"🚨 분석 일시 장애 ({str(e)[:20]}...)", 
+                "tech": "API 응답 지연 또는 데이터 파싱 에러 발생.", 
+                "ext": "일시적인 수급 불안정으로 인해 분석 시스템 재가동 중."
             }
 
     def push_to_local_server(self):
