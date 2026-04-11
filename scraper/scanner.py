@@ -15,8 +15,8 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 1.5 Flash의 압도적 할당량과 전문가용 프롬프트를 조합하여 24/7 고성능 분석을 구현합니다.
-    return genai.GenerativeModel('gemini-1.5-flash-latest')
+    # 🔥 사용자 요청에 따라 gemini-1.5-flash 기본 모델을 사용합니다.
+    return genai.GenerativeModel('gemini-1.5-flash')
 
 class DeepScanner:
     def __init__(self):
