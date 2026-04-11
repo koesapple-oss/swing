@@ -1,0 +1,15 @@
+{
+  "project_name": "Swing Trading AI",
+  "ai_infrastructure": {
+    "current_model": "gemini-3.1-flash-lite",
+    "subscription_plan": "Gemini Advanced / Paid Tier",
+    "scan_mode": "Ultra Speed",
+    "api_optimization": {
+      "delay_between_requests": 0.3,
+      "daily_quota_target": 1500,
+      "min_volume_threshold": 50000000000
+    }
+  },
+  "last_updated": "2026-04-11",
+  "status": "Production Ready"
+}

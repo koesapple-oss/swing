@@ -1,0 +1,99 @@
+{
+  "header": {
+    "status": "success",
+    "timestamp": "2026-04-10T13:25:22.922894Z",
+    "version": "1.0.0"
+  },
+  "payload": {
+    "data": [
+      {
+        "code": "005930",
+        "name": "삼성전자",
+        "market": "KOSPI",
+        "current_price": 56787,
+        "volume": 3512,
+        "ma_trend": "up",
+        "sentiment_score": 0.88,
+        "news_summary": "삼성전자: AI 및 반도체 업적 호조로 인해 강력한 매수 신호 포착.",
+        "grade": "S",
+        "targets": {
+          "buy": 56200.0,
+          "take_profit": 63600.0,
+          "stop_loss": 55100.0
+        },
+        "timestamp": "2026-04-10T13:25:22.922505Z"
+      },
+      {
+        "code": "000660",
+        "name": "SK하이닉스",
+        "market": "KOSPI",
+        "current_price": 177485,
+        "volume": 8270,
+        "ma_trend": "up",
+        "sentiment_score": 0.92,
+        "news_summary": "SK하이닉스: AI 및 반도체 업적 호조로 인해 강력한 매수 신호 포착.",
+        "grade": "S",
+        "targets": {
+          "buy": 175700.0,
+          "take_profit": 198800.0,
+          "stop_loss": 172200.0
+        },
+        "timestamp": "2026-04-10T13:25:22.922879Z"
+      },
+      {
+        "code": "035420",
+        "name": "NAVER",
+        "market": "KOSPI",
+        "current_price": 50181,
+        "volume": 6530,
+        "ma_trend": "up",
+        "sentiment_score": 0.65,
+        "news_summary": "NAVER: AI 및 반도체 업적 호조로 인해 강력한 매수 신호 포착.",
+        "grade": "A",
+        "targets": {
+          "buy": 49700.0,
+          "take_profit": 56200.0,
+          "stop_loss": 48700.0
+        },
+        "timestamp": "2026-04-10T13:25:22.922884Z"
+      },
+      {
+        "code": "035720",
+        "name": "카카오",
+        "market": "KOSPI",
+        "current_price": 93178,
+        "volume": 7683,
+        "ma_trend": "up",
+        "sentiment_score": 0.42,
+        "news_summary": "카카오: AI 및 반도체 업적 호조로 인해 강력한 매수 신호 포착.",
+        "grade": "A",
+        "targets": {
+          "buy": 92200.0,
+          "take_profit": 104400.0,
+          "stop_loss": 90400.0
+        },
+        "timestamp": "2026-04-10T13:25:22.922888Z"
+      },
+      {
+        "code": "005380",
+        "name": "현대차",
+        "market": "KOSPI",
+        "current_price": 198648,
+        "volume": 8028,
+        "ma_trend": "up",
+        "sentiment_score": 0.81,
+        "news_summary": "현대차: AI 및 반도체 업적 호조로 인해 강력한 매수 신호 포착.",
+        "grade": "S",
+        "targets": {
+          "buy": 196700.0,
+          "take_profit": 222500.0,
+          "stop_loss": 192700.0
+        },
+        "timestamp": "2026-04-10T13:25:22.922892Z"
+      }
+    ],
+    "metadata": {
+      "count": 5
+    }
+  }
+}
