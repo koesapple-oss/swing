@@ -14,8 +14,8 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 차단을 피하기 위해 가장 검증된 1.5-flash 모델을 기본으로 사용합니다.
-    return genai.GenerativeModel('gemini-1.5-flash')
+    # 🔥 2026년 기준 404 에러 방지 및 성능 향상을 위해 Gemini 3 Flash 모델을 사용합니다.
+    return genai.GenerativeModel('gemini-3-flash-preview')
 
 class DeepScanner:
     def __init__(self):
