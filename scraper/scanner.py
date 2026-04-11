@@ -33,16 +33,24 @@ class DeepScanner:
         
         all_candidates = []
         for m_code, m_name in markets:
+            print(f"📡 {m_name} 시장 데이터 수집 중...")
             raw_stocks = self.kis.get_market_rankings(m_code)
+            print(f"✅ {m_name} 종목 수집 완료 ({len(raw_stocks)}개). 필터링 시작...")
+            
             for s in raw_stocks:
                 name = s.get('hts_kor_isnm')
                 code = s.get('mksc_shrn_iscd')
                 price = float(s.get('stck_prpr', 0))
                 volume_money = float(s.get('acml_tr_pbmn', 0))
                 
+                # 거래대금 500억 이상 필터링
                 if volume_money >= 50_000_000_000:
+                    print(f"💎 분석 대상 발견: {name} ({int(volume_money/100_000_000)}억) - AI 분석 중...")
                     analysis = self.analyze_deep_with_ai(name)
+                    if not analysis: continue
+                    
                     sentiment = analysis["score"]
+                    print(f"📊 {name} 점수: {sentiment:.2f} | {analysis['summary'][:30]}...")
                     
                     if sentiment > 0.4:
                         all_candidates.append({
@@ -53,10 +61,11 @@ class DeepScanner:
                             "ext_reason": analysis["ext"],
                             "grade": "S" if sentiment > 0.7 else "A"
                         })
+                        self.target_stocks = all_candidates
+                        self.push_to_local_server()
                     
-                    self.target_stocks = all_candidates
-                    self.push_to_local_server()
-                    time.sleep(60.0)
+                    # AI 할당량 및 안정성을 위해 분석 사이에만 짧게 대기 (60초 -> 10초로 단축 제안)
+                    time.sleep(10.0)
         
     def analyze_deep_with_ai(self, stock_name):
         try:
