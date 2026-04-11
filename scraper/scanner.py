@@ -1,12 +1,11 @@
 # Project: Swing
-# Agent 2: The Scanner & Deep Analyzer (High-Precision Edition)
+# Agent 2: The Scanner (Hyper-Deep Analysis Mode)
 # Path: scraper/scanner.py
 
 import os
 import requests
 import time
 import re
-import datetime
 import google.generativeai as genai
 from dotenv import load_dotenv
 from kis_client import KISClient
@@ -15,33 +14,25 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    try:
-        return genai.GenerativeModel('gemini-3.1-flash-lite-preview')
-    except:
-        return genai.GenerativeModel('gemini-2.5-flash-lite')
+    # 🔥 차단을 피하기 위해 가장 검증된 1.5-flash 모델을 기본으로 사용합니다.
+    return genai.GenerativeModel('gemini-1.5-flash')
 
 class DeepScanner:
     def __init__(self):
         self.kis = KISClient()
-        try:
-            self.ai_model = init_ai()
-            print("🚀 Gemini High-Precision 분석 엔진 가동 완료")
-        except Exception as e:
-            print(f"❌ AI 분석기 초기화 실패: {e}")
-            self.ai_model = None
+        self.ai_model = init_ai()
+        print("🔍 [Hyper-Deep] 정밀 분석 엔진 가동 (분석 주기: 60초)")
             
         self.local_url = "http://localhost:8000"
         self.target_stocks = []
 
     def run_full_scan(self):
-        print("⚡ [High Precision Scan] 소수점 단위 정밀 분석 시퀀스 시작...")
+        print("⚡ 시장 전수 분석 시퀀스 가동...")
         markets = [("0001", "KOSPI"), ("1001", "KOSDAQ")]
         
         all_candidates = []
         for m_code, m_name in markets:
-            print(f"📡 {m_name} 정밀 수집 및 AI 심층 리서치...")
             raw_stocks = self.kis.get_market_rankings(m_code)
-            
             for s in raw_stocks:
                 name = s.get('hts_kor_isnm')
                 code = s.get('mksc_shrn_iscd')
@@ -52,38 +43,31 @@ class DeepScanner:
                     analysis = self.analyze_deep_with_ai(name)
                     sentiment = analysis["score"]
                     
-                    grade = "B"
-                    if sentiment > 0.7: grade = "S"
-                    elif sentiment > 0.4: grade = "A"
-                    
-                    if grade in ["S", "A"]:
-                        print(f"💎 [{grade}] {name} (AI 정밀점수: {sentiment*100:.1f}점)")
+                    if sentiment > 0.4:
                         all_candidates.append({
                             "code": code, "name": name, "price": price, "market": m_name,
                             "volume": volume_money, "sentiment": sentiment, 
                             "summary": analysis["summary"], 
                             "tech_reason": analysis["tech"], 
                             "ext_reason": analysis["ext"],
-                            "grade": grade
+                            "grade": "S" if sentiment > 0.7 else "A"
                         })
                     
-                    time.sleep(0.35)
+                    self.target_stocks = all_candidates
+                    self.push_to_local_server()
+                    time.sleep(60.0)
         
-        self.target_stocks = all_candidates
-        self.push_to_local_server()
-
     def analyze_deep_with_ai(self, stock_name):
-        if not self.ai_model:
-            return self._fallback_analysis(stock_name)
-
         try:
-            # 🔥 고정된 숫자가 아닌 정밀한 소수점 답변을 요구하는 프롬프트
+            # 🔥 성의 없는 답변을 방지하기 위해 구체적인 '전문가적 의견'을 요구하는 프롬프트
             prompt = (
-                f"주식 '{stock_name}' 정밀 투자 분석. "
-                "반드시 아래 형식을 엄수하고 한 줄로 답변해:\n"
+                f"당신은 20년 경력의 수석 애널리스트입니다. 주식 '{stock_name}'을 분석하세요. "
+                "반드시 아래 형식을 지키되, 각 항목은 30자 이상의 전문적인 통찰을 담으세요.\n"
                 "점수|요약|기술적분석|대외적요인\n"
-                "- 점수: -1.00 ~ 1.00 사이의 소수점 2자리 실수 (예: 0.73, 0.49). "
-                "기계적인 0.5, 0.6 등은 지양하고 아주 미세한 차이를 반영할 것."
+                "- 점수: -1.00에서 1.00 사이의 실수.\n"
+                "- 요약: 현재 시장에서의 핵심 위치와 평가.\n"
+                "- 기술적분석: 이평선, 거래량, 캔들 패턴 기반의 향후 전망.\n"
+                "- 대외적요인: 산업 트렌드, 거시 경제, 개별 뉴스 호재/악재 분석."
             )
             response = self.ai_model.generate_content(prompt)
             content = response.text.replace('`', '').strip()
@@ -96,21 +80,17 @@ class DeepScanner:
                     "score": score, "summary": parts[1].strip(),
                     "tech": parts[2].strip(), "ext": parts[3].strip()
                 }
-            return self._fallback_analysis(stock_name)
+            raise Exception("AI 응답 형식이 올바르지 않습니다.")
                 
         except Exception as e:
-            print(f"⚠️ {stock_name} 분석 오류: {e}")
-            return self._fallback_analysis(stock_name)
-
-    def _fallback_analysis(self, stock_name):
-        import random
-        # Fallback 조차 5단위로 안 나오도록 랜덤성 부여
-        base_score = 0.51 + (random.random() * 0.08)
-        return {
-            "score": round(base_score, 2), "summary": "안정적 기조 유지", 
-            "tech": "주요 지지선 상단에서 매수세가 유입되는 기술적 안정 구간", 
-            "ext": "시장 전체의 긍정적 흐름과 동조화된 안정적 모멘텀 유지"
-        }
+            # 🔥 에러가 났음을 사용자가 알 수 있도록 문구를 수정
+            print(f"❌ {stock_name} 분석 실패: {e}")
+            return {
+                "score": 0.0, 
+                "summary": "🚨 AI 분석 일시적 차단 (구글 할당량 초과)", 
+                "tech": "서버 IP가 구글로부터 일시적 제한을 받고 있습니다. 잠시 후 재개됩니다.", 
+                "ext": "이 메시지가 지속되면 API 키의 유료 티어 전환을 검토하세요."
+            }
 
     def push_to_local_server(self):
         for s in self.target_stocks:
@@ -129,7 +109,7 @@ class DeepScanner:
     def live_update_loop(self):
         while True:
             self.push_to_local_server()
-            time.sleep(2)
+            time.sleep(10)
 
 if __name__ == "__main__":
     scanner = DeepScanner()
