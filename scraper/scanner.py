@@ -35,7 +35,9 @@ class DeepScanner:
         for m_code, m_name in markets:
             print(f"📡 {m_name} 시장 데이터 수집 중...")
             raw_stocks = self.kis.get_market_rankings(m_code)
-            print(f"✅ {m_name} 종목 수집 완료 ({len(raw_stocks)}개). 필터링 시작...")
+            # 상위 30개 종목만 선택하여 속도 향상
+            raw_stocks = raw_stocks[:30]
+            print(f"✅ {m_name} 상위 30개 종목 수집 완료. 필터링 및 분석 시작...")
             
             for s in raw_stocks:
                 name = s.get('hts_kor_isnm')
@@ -64,8 +66,8 @@ class DeepScanner:
                         self.target_stocks = all_candidates
                         self.push_to_local_server()
                     
-                    # AI 할당량 및 안정성을 위해 분석 사이에만 짧게 대기 (60초 -> 10초로 단축 제안)
-                    time.sleep(10.0)
+                    # 요청하신 대로 대기 시간을 3초로 조정하여 분석 속도 향상
+                    time.sleep(3.0)
         
     def analyze_deep_with_ai(self, stock_name):
         try:
