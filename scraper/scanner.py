@@ -66,8 +66,8 @@ class DeepScanner:
                         self.target_stocks = all_candidates
                         self.push_to_local_server()
                     
-                    # RPM(15회/분) 제한을 고려하여 대기 시간을 4초로 조정
-                    time.sleep(4.0)
+                    # 시스템 안정성 및 할당량 보호를 위해 대기 시간을 10초로 설정
+                    time.sleep(10.0)
         
     def analyze_deep_with_ai(self, stock_name):
         try:
