@@ -15,8 +15,8 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 사용자 요청에 따라 gemini-1.5-flash 기본 모델을 사용합니다.
-    return genai.GenerativeModel('gemini-1.5-flash')
+    # 🔥 가이드 권장 사항에 따라 표준 모델명(gemini-2.5-flash)을 사용하여 안정성을 확보합니다.
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 class DeepScanner:
     def __init__(self):
