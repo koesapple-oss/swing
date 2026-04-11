@@ -7,6 +7,7 @@ import requests
 import time
 import re
 import google.generativeai as genai
+import json
 from dotenv import load_dotenv
 from kis_client import KISClient
 
@@ -59,31 +60,33 @@ class DeepScanner:
         
     def analyze_deep_with_ai(self, stock_name):
         try:
-            # 🔥 성의 없는 답변을 방지하기 위해 구체적인 '전문가적 의견'을 요구하는 프롬프트
+            # 🔥 파싱 에러 방지를 위해 JSON 응답 모드를 사용합니다.
             prompt = (
                 f"당신은 20년 경력의 수석 애널리스트입니다. 주식 '{stock_name}'을 분석하세요. "
-                "반드시 아래 형식을 지키되, 각 항목은 30자 이상의 전문적인 통찰을 담으세요.\n"
-                "점수|요약|기술적분석|대외적요인\n"
-                "- 점수: -1.00에서 1.00 사이의 실수.\n"
-                "- 요약: 현재 시장에서의 핵심 위치와 평가.\n"
-                "- 기술적분석: 이평선, 거래량, 캔들 패턴 기반의 향후 전망.\n"
-                "- 대외적요인: 산업 트렌드, 거시 경제, 개별 뉴스 호재/악재 분석."
+                "반드시 아래 JSON 형식을 지키되, 각 항목은 30자 이상의 전문적인 통찰을 담으세요.\n"
+                "{\n"
+                "  \"score\": 0.00, // -1.00에서 1.00 사이의 실수\n"
+                "  \"summary\": \"현재 시장에서의 핵심 위치와 평가\",\n"
+                "  \"tech\": \"이평선, 거래량, 캔들 패턴 기반의 향후 전망\",\n"
+                "  \"ext\": \"산업 트렌드, 거시 경제, 개별 뉴스 분석\"\n"
+                "}"
             )
-            response = self.ai_model.generate_content(prompt)
-            content = response.text.replace('`', '').strip()
+            response = self.ai_model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
             
-            parts = content.split('|')
-            if len(parts) >= 4:
-                score_str = re.findall(r"[-+]?\d*\.\d+|\d+", parts[0])
-                score = float(score_str[0]) if score_str else 0.5
-                return {
-                    "score": score, "summary": parts[1].strip(),
-                    "tech": parts[2].strip(), "ext": parts[3].strip()
-                }
-            raise Exception("AI 응답 형식이 올바르지 않습니다.")
+            data = json.loads(response.text.strip())
+            
+            return {
+                "score": float(data.get("score", 0.0)),
+                "summary": data.get("summary", "분석 결과 없음"),
+                "tech": data.get("tech", "기술적 분석 데이터 부족"),
+                "ext": data.get("ext", "대외적 요인 데이터 부족")
+            }
                 
         except Exception as e:
-            # 🔥 에러가 났음을 사용자가 알 수 있도록 문구를 수정
+            # 🔥 에러 시 디버깅을 위해 구체적인 내용을 출력하도록 개선
             print(f"❌ {stock_name} 분석 실패: {e}")
             return {
                 "score": 0.0, 
