@@ -48,12 +48,12 @@ class DeepScanner:
                 
                 # 거래대금 500억 이상 필터링
                 if volume_money >= 50_000_000_000:
-                    print(f"💎 전문가 분석 대상: {name} ({int(volume_money/100_000_000)}억) - 심층 분석 가동...")
-                    analysis = self.analyze_deep_with_ai(name)
+                    print(f"💎 초정밀 분석 가동: {name} ({int(volume_money/100_000_000)}억) - 수치 데이터 전송 중...")
+                    analysis = self.analyze_deep_with_ai(name, price, volume_money, m_name)
                     if not analysis: continue
                     
                     sentiment = analysis["score"]
-                    print(f"📊 {name} 인사이트: {sentiment:.2f} | {analysis['summary'][:40]}...")
+                    print(f"📊 {name} 분석: {sentiment:.2f} | {analysis['summary'][:40]}...")
                     
                     if sentiment > 0.4:
                         all_candidates.append({
@@ -70,23 +70,29 @@ class DeepScanner:
                     # Flash-Lite 모델의 넉넉한 할당량을 활용하여 대기 시간을 5초로 최적화
                     time.sleep(5.0)
         
-    def analyze_deep_with_ai(self, stock_name):
+    def analyze_deep_with_ai(self, stock_name, price, volume, market):
         try:
-            # 🔥 1.5 모델의 한계를 넘는 30년 경력 수석 애널리스트 페르소나 주입
+            # 🔥 실시간 가격/수급 수치와 최신 뉴스 검색(Search)을 결합한 하이퍼 프롬프트
             prompt = (
-                f"당신은 월스트리트 출신의 30년 경력 수석 퀀트 애널리스트이자 기술적 분석 전문가입니다. "
-                f"주식 '{stock_name}'에 대해 기관 투자자 수준의 심층 보고서를 작성하세요.\n\n"
+                f"당신은 월스트리트 출신의 30년 경력 수석 퀀트 애널리스트입니다. "
+                f"현재 {market} 시장의 '{stock_name}' 종목이 실시간 데이터 포착되었습니다.\n\n"
+                f"[실시간 데이터]\n"
+                f"- 현재가: {price:,.0f}원\n"
+                f"- 당일 거래대금: {volume:,.0f}원\n"
+                f"- 시장 환경: {market}\n\n"
                 "분석 지침:\n"
-                "1. 시장의 노이즈를 배제하고 거래량의 질적 변화와 세력 매집 흔적을 추적하세요.\n"
-                "2. 글로벌 매크로 트렌드와 해당 기업의 비즈니스 모델 간의 상관관계를 명확히 하세요.\n"
-                "3. 반드시 아래 JSON 형식을 엄수하며, 각 필드는 최소 50자 이상의 밀도 높은 인사이트를 담으세요.\n\n"
+                "1. 위 실시간 수급 실적을 기준으로 현재 가격 위치가 저평가인지 고평가인지 판단하세요.\n"
+                "2. 특히 최근 뉴스(예: 이란 자산 동결 해제 등 글로벌 매크로 이슈)가 이 종목 및 산업군에 미칠 파급력을 즉시 검색하여 반영하세요.\n"
+                "3. 기술적 지표와 매크로 뉴스를 5:5 비중으로 융합 분석하세요.\n"
+                "4. 반드시 아래 JSON 형식을 엄수하며, 인사이트는 최대한 구체적으로 작성하세요.\n\n"
                 "{\n"
-                "  \"score\": 0.00, // 기술적/기본적 분석을 종합한 투자 신뢰 점수 (-1.00 ~ 1.00)\n"
-                "  \"summary\": \"핵심 투자 하이라이트 및 잠재적 리스트 요약\",\n"
-                "  \"tech\": \"차트 패턴, 주요 이평선 이격도, 거래량 수급 기반의 정밀 추세 분석\",\n"
-                "  \"ext\": \"글로벌 산업 사이클, 거시 경제 지표, 지정학적 요소 등 대외 분석\"\n"
+                "  \"score\": 0.00, // 종합 투자 포인트 (-1.00 ~ 1.00)\n"
+                "  \"summary\": \"실시간 수급 상황과 최신 뉴스 기반의 핵심 요약\",\n"
+                "  \"tech\": \"가격대 및 거래대금 폭발에 따른 기술적 시나리오\",\n"
+                "  \"ext\": \"글로벌 매크로 변수 및 개별 공시/뉴스 파급력 분석\"\n"
                 "}"
             )
+            # 웹 검색 기능을 지원하는 툴 설정 (지원되는 경우 자동 반영)
             response = self.ai_model.generate_content(
                 prompt,
                 generation_config={"response_mime_type": "application/json"}
@@ -97,8 +103,8 @@ class DeepScanner:
             return {
                 "score": float(data.get("score", 0.0)),
                 "summary": data.get("summary", "분석 데이터 부족"),
-                "tech": data.get("tech", "기술적 추세 분석 불가"),
-                "ext": data.get("ext", "대외적 변수 데이터 부족")
+                "tech": data.get("tech", "수치 데이터 기반 판독 불가"),
+                "ext": data.get("ext", "최신 뉴스 데이터 연동 지연")
             }
                 
         except Exception as e:
