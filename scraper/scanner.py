@@ -15,8 +15,8 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 할당량이 넉넉한(Free Tier 1500 RPM) Gemini 1.5 Flash 모델을 사용하여 24/7 스캔을 보장합니다.
-    return genai.GenerativeModel('gemini-1.5-flash-latest')
+    # 🔥 2026년 기준 404 에러 방지 및 성능 향상을 위해 Gemini 3 Flash 모델을 사용합니다.
+    return genai.GenerativeModel('gemini-3-flash-preview')
 
 class DeepScanner:
     def __init__(self):
@@ -35,9 +35,9 @@ class DeepScanner:
         for m_code, m_name in markets:
             print(f"📡 {m_name} 시장 데이터 수집 중...")
             raw_stocks = self.kis.get_market_rankings(m_code)
-            # 상위 30개 종목만 선택하여 속도 향상
-            raw_stocks = raw_stocks[:30]
-            print(f"✅ {m_name} 상위 30개 종목 수집 완료. 필터링 및 분석 시작...")
+            # 무료 티어 Gemini 3 할당량(20회) 보호를 위해 각 시장 상위 10개로 제한
+            raw_stocks = raw_stocks[:10]
+            print(f"✅ {m_name} 상위 10개 종목 수집 완료 (Gemini 3 할당량 최적화). 필터링 시작...")
             
             for s in raw_stocks:
                 name = s.get('hts_kor_isnm')
