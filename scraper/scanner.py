@@ -15,8 +15,8 @@ load_dotenv()
 
 def init_ai():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    # 🔥 가이드 권장 사항에 따라 표준 모델명(gemini-2.5-flash)을 사용하여 안정성을 확보합니다.
-    return genai.GenerativeModel('gemini-2.5-flash')
+    # 🔥 가이드의 최종 권장 사항인 경로 포함 풀 네임(models/gemini-1.5-flash)을 사용하여 404와 할당량 문제를 동시 해결합니다.
+    return genai.GenerativeModel('models/gemini-1.5-flash')
 
 class DeepScanner:
     def __init__(self):
