@@ -67,8 +67,8 @@ class DeepScanner:
                         self.target_stocks = all_candidates
                         self.push_to_local_server()
                     
-                    # 1.5 Flash는 10초 대기면 매우 안정적입니다.
-                    time.sleep(10.0)
+                    # Flash-Lite 모델의 넉넉한 할당량을 활용하여 대기 시간을 5초로 최적화
+                    time.sleep(5.0)
         
     def analyze_deep_with_ai(self, stock_name):
         try:
