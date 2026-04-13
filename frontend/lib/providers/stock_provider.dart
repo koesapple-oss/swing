@@ -7,10 +7,22 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/stock_model.dart';
 
-// 🚀 Proxmox 서버(192.168.199.107:8000)에서 데이터를 한 번에 가져옵니다.
+// 🚀 모든 통신의 기준 주소 (Proxmox 서버 IP)
+const String baseUrl = "http://192.168.199.107:8000";
+
+// 🚀 서버에 스캔 시작을 요청합니다. (On-Demand)
+Future<void> triggerScan() async {
+  try {
+    print("🛰 [On-Demand] 스캔 요청 전송 중...");
+    final response = await http.post(Uri.parse("$baseUrl/trigger-scan"));
+    print("🛰 [On-Demand] 서버 응답: ${response.statusCode}");
+  } catch (e) {
+    print("❌ 스캔 요청 실패: $e");
+  }
+}
+
+// 📡 실시간 종목 리스트 가져오기
 final stockListProvider = FutureProvider<List<StockModel>>((ref) async {
-  // 사용자님의 Proxmox 컨테이너 IP 주소로 고정합니다.
-  const String baseUrl = "http://192.168.199.107:8000";
   const String url = "$baseUrl/recommendations";
   
   try {
@@ -33,15 +45,13 @@ final stockListProvider = FutureProvider<List<StockModel>>((ref) async {
       throw Exception("서버 응답 오류: ${response.statusCode}");
     }
   } catch (e) {
-    print("❌ 서버 연결 실패 (인터넷/Wi-Fi 확인): $e");
+    print("❌ 서버 연결 실패: $e");
     rethrow;
   }
 });
 
-// 🛰 서버의 현재 상태(스캔 중 여부 등)를 모니터링하는 프로바이더
+// 🛰 서버의 현재 상태(스캔 중 여부 등) 모니터링
 final scanStatusProvider = StreamProvider<Map<String, dynamic>>((ref) async* {
-  const String baseUrl = "http://192.168.199.107:8000";
-  
   yield* Stream.periodic(const Duration(seconds: 5), (_) async {
     try {
       final response = await http.get(Uri.parse(baseUrl));

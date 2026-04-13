@@ -5,10 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui'; // 상단 임포트 완료
+import 'dart:ui';
 import '../providers/stock_provider.dart';
 import '../widgets/stock_card.dart';
 import 'portfolio_view.dart';
+import '../models/stock_model.dart'; // StockModel 임포트 확인
 
 class CurrentTabNotifier extends Notifier<int> {
   @override
@@ -31,7 +32,6 @@ class HomeView extends ConsumerWidget {
       backgroundColor: const Color(0xFF0D0D0E),
       body: Stack(
         children: [
-          // 배경 글로우
           Positioned(
             top: -50,
             left: -50,
@@ -61,7 +61,11 @@ class HomeView extends ConsumerWidget {
     );
   }
 
-  Widget _buildDiscoveryPage(AsyncValue stocksAsync, AsyncValue statusAsync, WidgetRef ref) {
+  Widget _buildDiscoveryPage(
+    AsyncValue<List<StockModel>> stocksAsync, 
+    AsyncValue<Map<String, dynamic>> statusAsync, 
+    WidgetRef ref
+  ) {
     final bool isScanning = statusAsync.value?['is_scanning'] ?? false;
 
     return Scaffold(
@@ -84,7 +88,10 @@ class HomeView extends ConsumerWidget {
           TextButton.icon(
             icon: Icon(isScanning ? Icons.sync : Icons.search_rounded, color: Colors.orangeAccent, size: 20),
             label: Text(isScanning ? '스캔 중' : '조회', style: GoogleFonts.outfit(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
-            onPressed: () => ref.invalidate(stockListProvider),
+            onPressed: () async {
+              await triggerScan();
+              ref.invalidate(stockListProvider);
+            },
           ),
           const SizedBox(width: 10),
         ],
@@ -103,7 +110,10 @@ class HomeView extends ConsumerWidget {
             return _buildEmptyState(ref, isScanning);
           }
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(stockListProvider),
+            onRefresh: () async {
+              await triggerScan();
+              ref.invalidate(stockListProvider);
+            },
             color: Colors.orangeAccent,
             backgroundColor: const Color(0xFF1C1C1E),
             child: ListView.builder(
@@ -140,7 +150,10 @@ class HomeView extends ConsumerWidget {
           const SizedBox(height: 24),
           if (!isScanning)
             ElevatedButton(
-              onPressed: () => ref.invalidate(stockListProvider),
+              onPressed: () async {
+                await triggerScan();
+                ref.invalidate(stockListProvider);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,
                 foregroundColor: Colors.black,
@@ -155,7 +168,6 @@ class HomeView extends ConsumerWidget {
   }
 
   Widget _buildErrorState(Object err, WidgetRef ref) {
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -175,7 +187,6 @@ class HomeView extends ConsumerWidget {
       ),
     );
   }
-
 
   Widget _buildBottomNav(int currentTab, WidgetRef ref) {
     return Container(

@@ -2,7 +2,7 @@
 # Agent 0: The Local Architect
 # Path: scraper/api_server.py
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
@@ -10,6 +10,7 @@ import uvicorn
 import time
 import json
 import os
+import asyncio
 
 app = FastAPI(title="Swing Trading Local API")
 
@@ -20,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 데이터베이스 시스템 (파일 기반 영속성 추가)
+# 데이터베이스 시스템
 DB_FILE = "recommendations.json"
 
 def load_db():
@@ -28,8 +29,8 @@ def load_db():
         try:
             with open(DB_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception as e:
-            print(f"Error loading DB: {e}")
+        except:
+            pass
     return {
         "recommendations": {},
         "last_full_scan": 0,
@@ -40,8 +41,8 @@ def save_db():
     try:
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(db, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"Error saving DB: {e}")
+    except:
+        pass
 
 db = load_db()
 
@@ -63,16 +64,21 @@ class StockData(BaseModel):
 async def root():
     return {
         "status": "running",
-        "engine": "FastAPI Local", # Proxmox 서버 응답 형식과 일치 시킴
+        "engine": "FastAPI On-Demand",
         "is_scanning": db.get("is_scanning", False),
         "last_scan_time": db.get("last_full_scan", 0),
         "count": len(db.get("recommendations", {}))
     }
 
+@app.get("/recommendations")
+async def get_recommendations():
+    results = list(db["recommendations"].values())
+    results.sort(key=lambda x: x.get("server_time", 0), reverse=True)
+    return results
+
 @app.post("/start-scan")
 async def start_scan():
     db["is_scanning"] = True
-    # db["recommendations"] = {} # 기존 데이터를 지우지 않고 업데이트 방식으로 변경 (안정성)
     save_db()
     return {"status": "scanning_started"}
 
@@ -91,12 +97,22 @@ async def update_stock(data: StockData):
     save_db()
     return {"status": "success"}
 
-@app.get("/recommendations")
-async def get_recommendations():
-    results = list(db["recommendations"].values())
-    # 최신 수신 순 정렬
-    results.sort(key=lambda x: x.get("server_time", 0), reverse=True)
-    return results
+# 🚀 On-Demand 기능을 위해 스캐너를 백그라운드에서 실행하는 엔드포인트
+@app.post("/trigger-scan")
+async def trigger_scan(background_tasks: BackgroundTasks):
+    if db.get("is_scanning"):
+        return {"status": "already_scanning"}
+    
+    # 별도 프로세스로 실행하여 API 응답 지연 방지
+    import subprocess
+    import sys
+    
+    def run_scanner_process():
+        # uv 환경을 고려하여 실행
+        subprocess.Popen([sys.executable, "scanner.py"], cwd=os.path.dirname(__file__))
+
+    background_tasks.add_task(run_scanner_process)
+    return {"status": "scan_triggered"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
