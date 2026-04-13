@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
-import time
 import uvicorn
+import time
 
 app = FastAPI(title="Swing Trading Local API")
 
@@ -18,9 +18,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 데이터베이스 시스템 (메모리)
 db = {
     "recommendations": {},
-    "last_full_scan": 0
+    "last_full_scan": 0,
+    "is_scanning": False
 }
 
 class StockData(BaseModel):
@@ -39,29 +41,38 @@ class StockData(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"status": "running", "engine": "FastAPI Local", "last_scan": db["last_full_scan"]}
+    return {
+        "status": "running", 
+        "is_scanning": db["is_scanning"],
+        "last_scan_time": db["last_full_scan"],
+        "count": len(db["recommendations"])
+    }
+
+@app.post("/start-scan")
+async def start_scan():
+    db["is_scanning"] = True
+    db["recommendations"] = {} # 새 스캔 시 이전 데이터 삭제
+    return {"status": "scanning_started"}
+
+@app.post("/end-scan")
+async def end_scan():
+    db["is_scanning"] = False
+    db["last_full_scan"] = time.time()
+    return {"status": "scanning_ended"}
 
 @app.post("/update")
 async def update_stock(data: StockData):
     data_dict = data.dict()
-    data_dict["server_time"] = time.time() # 서버 수신 시각 기록
+    data_dict["server_time"] = time.time()
     db["recommendations"][data.code] = data_dict
     return {"status": "success"}
 
-@app.delete("/clear")
-async def clear_recommendations():
-    """새로운 전체 스캔 시작 전 기존 데이터를 비웁니다."""
-    db["recommendations"] = {}
-    db["last_full_scan"] = time.time()
-    return {"status": "cleared"}
-
 @app.get("/recommendations")
 async def get_recommendations():
-    # 최신 순(업데이트 시각 순)으로 정렬하여 반환
     results = list(db["recommendations"].values())
+    # 최신 수신 순 정렬
     results.sort(key=lambda x: x.get("server_time", 0), reverse=True)
     return results
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

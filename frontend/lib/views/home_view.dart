@@ -25,12 +25,13 @@ class HomeView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTab = ref.watch(currentTabProvider);
     final stocksAsync = ref.watch(stockListProvider);
+    final statusAsync = ref.watch(scanStatusProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0E),
       body: Stack(
         children: [
-          // 배경 글로우 (에러 수정: ImageFiltered 사용)
+          // 배경 글로우
           Positioned(
             top: -50,
             left: -50,
@@ -50,7 +51,7 @@ class HomeView extends ConsumerWidget {
           IndexedStack(
             index: currentTab,
             children: [
-              _buildDiscoveryPage(stocksAsync, ref),
+              _buildDiscoveryPage(stocksAsync, statusAsync, ref),
               const PortfolioView(),
             ],
           ),
@@ -60,7 +61,9 @@ class HomeView extends ConsumerWidget {
     );
   }
 
-  Widget _buildDiscoveryPage(AsyncValue stocksAsync, WidgetRef ref) {
+  Widget _buildDiscoveryPage(AsyncValue stocksAsync, AsyncValue statusAsync, WidgetRef ref) {
+    final bool isScanning = statusAsync.value?['is_scanning'] ?? false;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -79,17 +82,25 @@ class HomeView extends ConsumerWidget {
         ),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.search_rounded, color: Colors.orangeAccent, size: 20),
-            label: Text('조회', style: GoogleFonts.outfit(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+            icon: Icon(isScanning ? Icons.sync : Icons.search_rounded, color: Colors.orangeAccent, size: 20),
+            label: Text(isScanning ? '스캔 중' : '조회', style: GoogleFonts.outfit(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
             onPressed: () => ref.invalidate(stockListProvider),
           ),
           const SizedBox(width: 10),
         ],
+        bottom: isScanning ? PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: LinearProgressIndicator(
+            backgroundColor: Colors.transparent,
+            color: Colors.orangeAccent.withOpacity(0.5),
+            minHeight: 2,
+          ),
+        ) : null,
       ),
       body: stocksAsync.when(
         data: (stocks) {
           if (stocks.isEmpty) {
-            return _buildEmptyState(ref);
+            return _buildEmptyState(ref, isScanning);
           }
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(stockListProvider),
@@ -108,33 +119,43 @@ class HomeView extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(WidgetRef ref) {
+  Widget _buildEmptyState(WidgetRef ref, bool isScanning) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded, size: 64, color: Colors.white.withOpacity(0.1)),
-          const SizedBox(height: 16),
-          const Text("현재 선별된 정예 종목이 없습니다.\n'조회' 버튼을 눌러 시장을 스캔하세요.", 
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, height: 1.5)),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => ref.invalidate(stockListProvider),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            ),
-            child: const Text("지금 조회하기", style: TextStyle(fontWeight: FontWeight.bold)),
+          Icon(
+            isScanning ? Icons.psychology : Icons.search_off_rounded, 
+            size: 64, 
+            color: Colors.white.withOpacity(0.1)
           ),
+          const SizedBox(height: 16),
+          Text(
+            isScanning 
+              ? "AI가 현재 시장 주도주를 분석 중입니다.\n잠시만 기다려 주세요 (약 2~4분 소요)"
+              : "현재 선별된 정예 종목이 없습니다.\n'조회' 버튼을 눌러 시장을 스캔하세요.", 
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey, height: 1.5)
+          ),
+          const SizedBox(height: 24),
+          if (!isScanning)
+            ElevatedButton(
+              onPressed: () => ref.invalidate(stockListProvider),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              ),
+              child: const Text("지금 조회하기", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildErrorState(Object err, WidgetRef ref) {
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),

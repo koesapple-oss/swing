@@ -38,3 +38,17 @@ final stockListProvider = FutureProvider<List<StockModel>>((ref) async {
   }
 });
 
+// 🛰 서버의 현재 상태(스캔 중 여부 등)를 모니터링하는 프로바이더
+final scanStatusProvider = StreamProvider<Map<String, dynamic>>((ref) async* {
+  const String baseUrl = "http://192.168.199.107:8000";
+  
+  yield* Stream.periodic(const Duration(seconds: 5), (_) async {
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return {"is_scanning": false, "count": 0};
+  }).asyncMap((event) => event);
+});
