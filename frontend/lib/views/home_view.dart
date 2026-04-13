@@ -78,8 +78,9 @@ class HomeView extends ConsumerWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+          TextButton.icon(
+            icon: const Icon(Icons.search_rounded, color: Colors.orangeAccent, size: 20),
+            label: Text('조회', style: GoogleFonts.outfit(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
             onPressed: () => ref.invalidate(stockListProvider),
           ),
           const SizedBox(width: 10),
@@ -88,36 +89,52 @@ class HomeView extends ConsumerWidget {
       body: stocksAsync.when(
         data: (stocks) {
           if (stocks.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(ref);
           }
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 10, bottom: 40),
-            itemCount: stocks.length,
-            itemBuilder: (context, index) => StockCard(stock: stocks[index]),
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(stockListProvider),
+            color: Colors.orangeAccent,
+            backgroundColor: const Color(0xFF1C1C1E),
+            child: ListView.builder(
+              padding: const EdgeInsets.only(top: 10, bottom: 40),
+              itemCount: stocks.length,
+              itemBuilder: (context, index) => StockCard(stock: stocks[index]),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.orangeAccent, strokeWidth: 2)),
-        error: (err, stack) => _buildErrorState(err),
+        error: (err, stack) => _buildErrorState(err, ref),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.search_off_rounded, size: 64, color: Colors.white.withOpacity(0.1)),
           const SizedBox(height: 16),
-          const Text("현재 선별된 정예 종목이 없습니다.\n스캐너를 실행 중인지 확인해 주세요.", 
+          const Text("현재 선별된 정예 종목이 없습니다.\n'조회' 버튼을 눌러 시장을 스캔하세요.", 
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey, height: 1.5)),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => ref.invalidate(stockListProvider),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orangeAccent,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            ),
+            child: const Text("지금 조회하기", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(Object err) {
+  Widget _buildErrorState(Object err, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -127,11 +144,17 @@ class HomeView extends ConsumerWidget {
             const Icon(Icons.dns_outlined, color: Colors.redAccent, size: 48),
             const SizedBox(height: 16),
             Text("로컬 서버 연결 실패\n$err", textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => ref.invalidate(stockListProvider),
+              child: const Text("다시 시도", style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildBottomNav(int currentTab, WidgetRef ref) {
     return Container(

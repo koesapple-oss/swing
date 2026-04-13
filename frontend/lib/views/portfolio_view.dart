@@ -25,7 +25,15 @@ class PortfolioView extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text('내 투자 자산', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 22)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+            onPressed: () => ref.invalidate(stockListProvider),
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
+
       body: Column(
         children: [
           // 1. 자산 대시보드 (Premium Card)
