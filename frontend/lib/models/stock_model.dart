@@ -51,15 +51,20 @@ class StockModel {
       targets: Map<String, dynamic>.from(data['targets'] ?? {}).map(
         (key, value) => MapEntry(key, (value ?? 0).toDouble())
       ),
-      timestamp: _parseTimestamp(data['timestamp']),
+      timestamp: _parseTimestamp(data['server_time']),
     );
   }
 
   static DateTime _parseTimestamp(dynamic timestamp) {
     if (timestamp == null) return DateTime.now();
+    if (timestamp is num) {
+      // 서버에서 온 유닉스 타임스탬프 (초 단위)
+      return DateTime.fromMillisecondsSinceEpoch((timestamp * 1000).toInt());
+    }
     if (timestamp is String) return DateTime.tryParse(timestamp) ?? DateTime.now();
     return DateTime.now();
   }
+
 
   static StockGrade _parseGrade(String? grade) {
     if (grade == null) return StockGrade.B;

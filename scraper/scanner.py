@@ -53,7 +53,15 @@ class DeepScanner:
     def run_full_scan(self):
         print("⚡ 시장 전수 분석 시퀀스 가동...")
         
+        # 0. 기존 데이터 초기화 (Stale Data 방지)
+        try:
+            requests.delete(f"{self.local_url}/clear")
+            print("🧹 이전 스캔 데이터 초기화 완료.")
+        except:
+            print("⚠️ 데이터 초기화 요청 실패 (서버 확인 필요)")
+
         # 1시간(3600초)에 한 번만 매크로 뉴스 업데이트 수행 (사용자 요청 반영)
+
         current_time = time.time()
         if current_time - self.last_macro_update > 3600:
             self.update_macro_context()

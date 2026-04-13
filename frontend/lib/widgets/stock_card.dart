@@ -67,14 +67,15 @@ class StockCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "${stock.market} · ${stock.code}",
-                          style: const TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 0.5),
+                          "${stock.market} · ${stock.code} · ${DateFormat('HH:mm').format(stock.timestamp)}",
+                          style: TextStyle(color: Colors.grey.withOpacity(0.6), fontSize: 11, letterSpacing: 0.5),
                         ),
                       ],
                     ),
                     _buildGradeBadge(isStrong),
                   ],
                 ),
+
                 
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
