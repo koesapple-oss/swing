@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import time
+import uvicorn
 
 app = FastAPI(title="Swing Trading Local API")
 
