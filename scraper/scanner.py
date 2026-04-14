@@ -18,8 +18,8 @@ print("🚀 [Scanner] 시스템 초기화 시작...", flush=True)
 def init_ai():
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
-    # 🚀 목록에 있는 가장 범용적인 안정 버전 별칭(latest) 사용
-    return genai.GenerativeModel('models/gemini-flash-latest')
+    # 🚀 무료 사용자에게 가장 관대하고 빠른 2.0-flash-lite 모델 시도
+    return genai.GenerativeModel('models/gemini-2.0-flash-lite')
 
 def safe_float(val):
     try:
@@ -84,6 +84,9 @@ class DeepScanner:
                     # 🌙 야간 대응
                     if not analysis_targets and raw_stocks:
                         analysis_targets = raw_stocks[:2]
+
+                # 🚀 20회 한도 준수를 위해 마켓당 상위 7개로 제한
+                analysis_targets = analysis_targets[:7]
 
                 # 💡 타겟이 없으면 삼성전자 샘플 강제 삽입
                 if not analysis_targets and m_name == "KOSPI":
