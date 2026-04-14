@@ -18,8 +18,8 @@ print("🚀 [Scanner] 시스템 초기화 시작...", flush=True)
 def init_ai():
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
-    # 🚀 확인된 목록 중 가장 안정적이고 성능이 좋은 2.5-flash 사용
-    return genai.GenerativeModel('models/gemini-2.5-flash')
+    # 🚀 무료 할당량이 가장 넉넉하고 빠른 2.5-flash-lite 모델 사용
+    return genai.GenerativeModel('models/gemini-2.5-flash-lite')
 
 def safe_float(val):
     try:
