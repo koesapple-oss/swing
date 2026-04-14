@@ -107,7 +107,7 @@ class DeepScanner:
     def push_one_to_server(self, s):
         payload = {
             "code": s["code"], "name": s["name"], "market": s["market"],
-            "current_price": s["price"], "volume": int(s["volume"] / 1_000_000),
+            "current_price": s["price"], "volume": int(s["volume"] / 100_000_000),
             "sentiment_score": s["sentiment"], "news_summary": s["summary"],
             "tech_reason": s["tech_reason"], "ext_reason": s["ext_reason"],
             "grade": s["grade"], "targets": {
