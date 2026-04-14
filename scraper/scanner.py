@@ -80,32 +80,42 @@ class DeepScanner:
                     volume_money = (1000 - (index * 100)) * 100_000_000 # 1000억~800억 가상 부여
 
                 print(f"💎 AI 분석 시작 ({index+1}/{len(analysis_targets)}): {name}")
-                try:
-                    analysis = self.analyze_deep_with_ai(name, price, volume_money, m_name)
-                    if analysis:
-                        # 🛡 점수 자동 보정 (75 -> 0.75, 7500 -> 0.75 등)
-                        score = float(analysis.get("score", 0))
-                        while abs(score) > 1.0:
-                            score = score / 10.0
-                            if abs(score) < 0.1 and score != 0: # 너무 작아지면 중단
-                                break
-                        score = round(score, 2)
-                        
-                        stock_data = {
-                            "code": code, "name": name, "price": price, "market": m_name,
-                            "volume": volume_money, "sentiment": score,
-                            "summary": analysis["summary"],
-                            "tech_reason": analysis["tech"],
-                            "ext_reason": analysis["ext"],
-                            "grade": "S" if score > 0.7 else "A"
-                        }
-                        self.push_one_to_server(stock_data)
-                        print(f"✅ 분석 완료: {name} (점수: {score})")
-                except Exception as e:
-                    print(f"🚨 {name} 에러: {e}")
                 
-                # ⚡️ 빠른 확인을 위해 대기 시간 단축
-                time.sleep(2.0)
+                # 🛡 429 할당량 초과 대비 재시도 로직
+                max_retries = 2
+                for attempt in range(max_retries):
+                    try:
+                        analysis = self.analyze_deep_with_ai(name, price, volume_money, m_name)
+                        if analysis:
+                            # 🛡 점수 자동 보정
+                            score = float(analysis.get("score", 0))
+                            while abs(score) > 1.0:
+                                score = score / 10.0
+                                if abs(score) < 0.1 and score != 0: break
+                            score = round(score, 2)
+                            
+                            stock_data = {
+                                "code": code, "name": name, "price": price, "market": m_name,
+                                "volume": volume_money, "sentiment": score,
+                                "summary": analysis["summary"],
+                                "tech_reason": analysis["tech"],
+                                "ext_reason": analysis["ext"],
+                                "grade": "S" if score > 0.7 else "A"
+                            }
+                            self.push_one_to_server(stock_data)
+                            print(f"✅ 분석 완료: {name} (점수: {score})")
+                            break # 성공 시 루프 탈출
+                            
+                    except Exception as e:
+                        if "429" in str(e) and attempt < max_retries - 1:
+                            print(f"⚠️ [Gemini] 할당량 초과! 65초 대기 후 재시도합니다... ({attempt+1}/{max_retries})")
+                            time.sleep(65)
+                        else:
+                            print(f"🚨 {name} 에러: {e}")
+                            break
+                
+                # ⚡️ 무료 티어 RPM 준수를 위해 7.5초 대기 (안전 위주)
+                time.sleep(7.5)
 
         try: 
             requests.post(f"{self.api_url}/end-scan", timeout=5)
