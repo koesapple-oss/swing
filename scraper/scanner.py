@@ -86,8 +86,9 @@ class DeepScanner:
         prompt = (
             f"종목: {stock_name}\n"
             f"데이터: 가격 {price}원, 거래대금 {volume}원, 시장 {market}\n"
-            "상황: 현재는 장 개시 전입니다. 전일 종가와 섹터 전망을 바탕으로 오늘 시초가 대응 전략을 분석하세요.\n"
-            "JSON 형식으로 응답: {\"score\": 점수, \"summary\": \"요약\", \"tech\": \"기술적분석\", \"ext\": \"대외전망\"}"
+            f"매크로: {self.macro_context}\n"
+            "JSON 형식으로 응답: {\"score\": 0.75, \"summary\": \"요약\", \"tech\": \"기술적분석\", \"ext\": \"대외전망\"}\n"
+            "주의: 점수는 반드시 -1.0 ~ 1.0 사이의 소수점으로만 응답하세요."
         )
         response = self.ai_model.generate_content(
             prompt,
