@@ -30,6 +30,13 @@ class DeepScanner:
         try: requests.post(f"{self.api_url}/start-scan", timeout=5)
         except: pass
 
+        # 🚀 통신 확인용 초기 데이터 즉시 전송
+        self.push_one_to_server({
+            "code": "000000", "name": "AI 분석 가동됨", "price": 0, "market": "SYSTEM",
+            "volume": 0, "sentiment": 0.99, "summary": "연결 성공! 시장 데이터를 분석하기 시작합니다.",
+            "tech_reason": "연결 완료", "ext_reason": "분석 대기 중", "grade": "S"
+        })
+
         markets = [("0001", "KOSPI"), ("1001", "KOSDAQ")]
         self.target_stocks = []
         

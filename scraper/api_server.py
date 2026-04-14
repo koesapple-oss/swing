@@ -45,6 +45,9 @@ def save_db():
         pass
 
 db = load_db()
+# 🚀 서버 재시작 시 스캔 중 상태를 초기화하여 '이미 스캔 중' 오류 방지
+db["is_scanning"] = False
+save_db()
 
 class StockData(BaseModel):
     code: str
