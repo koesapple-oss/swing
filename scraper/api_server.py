@@ -79,6 +79,8 @@ async def get_recommendations():
 @app.post("/start-scan")
 async def start_scan():
     db["is_scanning"] = True
+    # 🧹 새로운 스캔 시작 시 기존 데이터 초기화 (테스트 데이터 섞임 방지)
+    db["recommendations"] = {}
     save_db()
     return {"status": "scanning_started"}
 

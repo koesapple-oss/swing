@@ -61,13 +61,21 @@ class DeepScanner:
                 try:
                     analysis = self.analyze_deep_with_ai(name, price, volume_money, m_name)
                     if analysis:
+                        # 🛡 점수 자동 보정 (75 -> 0.75, 7500 -> 0.75 등)
+                        score = float(analysis.get("score", 0))
+                        while abs(score) > 1.0:
+                            score = score / 10.0
+                            if abs(score) < 0.1 and score != 0: # 너무 작아지면 중단
+                                break
+                        score = round(score, 2)
+                        
                         stock_data = {
                             "code": code, "name": name, "price": price, "market": m_name,
-                            "volume": volume_money, "sentiment": analysis["score"],
+                            "volume": volume_money, "sentiment": score,
                             "summary": analysis["summary"],
                             "tech_reason": analysis["tech"],
                             "ext_reason": analysis["ext"],
-                            "grade": "S" if analysis["score"] > 0.7 else "A"
+                            "grade": "S" if score > 0.7 else "A"
                         }
                         self.push_one_to_server(stock_data)
                         print(f"✅ 분석 완료: {name} (점수: {analysis['score']})")
