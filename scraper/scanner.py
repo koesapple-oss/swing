@@ -18,8 +18,8 @@ print("🚀 [Scanner] 시스템 초기화 시작...", flush=True)
 def init_ai():
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
-    # 🚀 하루 1,500회 분석이 가능한 가장 안정적인 1.5-flash 모델 사용
-    return genai.GenerativeModel('models/gemini-1.5-flash')
+    # 🚀 목록에 있는 가장 범용적인 안정 버전 별칭(latest) 사용
+    return genai.GenerativeModel('models/gemini-flash-latest')
 
 def safe_float(val):
     try:
