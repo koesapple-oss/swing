@@ -161,10 +161,12 @@ class DeepScanner:
     def analyze_deep_with_ai(self, stock_name, price, volume, market):
         prompt = (
             f"종목: {stock_name}\n"
-            f"데이터: 가격 {price}원, 거래대금 {volume}원, 시장 {market}\n"
+            f"데이터: 현재가 {price}원, 거래대금 {volume}원, 시장 {market}\n"
             f"매크로: {self.macro_context}\n"
-            "JSON 형식으로 응답: {\"score\": 0.75, \"summary\": \"요약\", \"tech\": \"기술적분석\", \"ext\": \"대외전망\"}\n"
-            "주의: 점수는 반드시 -1.0 ~ 1.0 사이의 소수점으로만 응답하세요."
+            "당신은 프로 스윙 트레이더입니다. 위 종목을 분석하여 투자 매력도 점수를 산출하세요.\n"
+            "JSON 형식으로만 정확히 응답: {\"score\": 0.75, \"summary\": \"요약\", \"tech\": \"기술적분석\", \"ext\": \"대외전망\"}\n"
+            "주의: 점수는 -1.0(강력 매도)에서 1.0(강력 매수) 사이의 소수점으로 응답하세요.\n"
+            "0.0(완전 중립)은 되도록 피하고, 미세한 장단점을 파악하여 0.01 단위로 세밀하게 평가하세요."
         )
         response = self.ai_model.generate_content(
             prompt,
