@@ -1,19 +1,24 @@
-# Project: Swing
-# Agent 2: The Scanner (Hyper-Deep Analysis Mode)
-# Path: scraper/scanner.py
-
 import os
 import requests
 import time
 import re
+import warnings
 import google.generativeai as genai
 import json
 from dotenv import load_dotenv
 from kis_client import KISClient
 
+# 🤫 불필요한 경고 메시지 억제
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 load_dotenv()
 
+print("🚀 [Scanner] 시스템 초기화 시작...", flush=True)
+
 def init_ai():
+    api_key = os.getenv("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel('models/gemini-flash-lite-latest')
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
     return genai.GenerativeModel('models/gemini-flash-lite-latest')
@@ -24,9 +29,10 @@ class DeepScanner:
         self.ai_model = init_ai()
         self.macro_context = "장 개시 전 시장 주도 섹터 분석 중"
         self.api_url = os.getenv("SWING_API_URL", "http://localhost:8000")
-        print(f"🚀 [Scanner] 분석 엔진 가동 (Target: {self.api_url})")
+        print(f"🚀 [Scanner] 분석 엔진 가동 (Target: {self.api_url})", flush=True)
 
     def run_full_scan(self):
+        print("📡 [Scanner] 전 종목 스캔 및 AI 분석 시작...", flush=True)
         try: requests.post(f"{self.api_url}/start-scan", timeout=5)
         except: pass
 
