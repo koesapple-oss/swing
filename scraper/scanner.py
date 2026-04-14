@@ -28,31 +28,38 @@ class DeepScanner:
         self.kis = KISClient()
         self.ai_model = init_ai()
         self.macro_context = "장 개시 전 시장 주도 섹터 분석 중"
-        self.api_url = os.getenv("SWING_API_URL", "http://localhost:8000")
+        self.api_url = os.getenv("SWING_API_URL", "http://127.0.0.1:8000")
         print(f"🚀 [Scanner] 분석 엔진 가동 (Target: {self.api_url})", flush=True)
 
     def run_full_scan(self):
         print("📡 [Scanner] 전 종목 스캔 및 AI 분석 시작...", flush=True)
-        try: requests.post(f"{self.api_url}/start-scan", timeout=5)
-        except: pass
+        print(f"DEBUG: [1] 서버({self.api_url})에 스캔 시작 신호 전송...", flush=True)
+        try: 
+            requests.post(f"{self.api_url}/start-scan", timeout=5)
+            print("DEBUG: [2] 스캔 시작 신호 전송 성공", flush=True)
+        except Exception as e: 
+            print(f"DEBUG: [2] 스캔 시작 신호 전송 실패: {e}", flush=True)
 
         # 🚀 통신 확인용 초기 데이터 즉시 전송
-        self.push_one_to_server({
-            "code": "000000", "name": "AI 분석 가동됨", "price": 0, "market": "SYSTEM",
-            "volume": 0, "sentiment": 0.99, "summary": "연결 성공! 시장 데이터를 분석하기 시작합니다.",
-            "tech_reason": "연결 완료", "ext_reason": "분석 대기 중", "grade": "S"
-        })
+        print("DEBUG: [3] 테스트 데이터 전송 시도...", flush=True)
+        try:
+            self.push_one_to_server({
+                "code": "000000", "name": "AI 분석 가동됨", "price": 0, "market": "SYSTEM",
+                "volume": 0, "sentiment": 0.99, "summary": "연결 성공! 시장 데이터를 분석하기 시작합니다.",
+                "tech_reason": "연결 완료", "ext_reason": "분석 대기 중", "grade": "S"
+            })
+            print("DEBUG: [4] 테스트 데이터 전송 성공", flush=True)
+        except Exception as e:
+            print(f"DEBUG: [4] 테스트 데이터 전송 실패: {e}", flush=True)
 
         markets = [("0001", "KOSPI"), ("1001", "KOSDAQ")]
         self.target_stocks = []
         
         for m_code, m_name in markets:
-            print(f"📡 [KIS] {m_name} 데이터 수집 중...")
+            print(f"📡 [KIS] {m_name} 데이터 수집 중...", flush=True)
             try:
                 raw_stocks = self.kis.get_market_rankings(m_code)
-                if not raw_stocks:
-                    print(f"⚠️ [KIS] {m_name} 데이터를 가져오지 못했습니다.")
-                    raw_stocks = []
+                print(f"DEBUG: [5] {m_name} KIS 수집 완료 ({len(raw_stocks) if raw_stocks else 0}개)", flush=True)
             except Exception as e:
                 print(f"🚨 [KIS] {m_name} 통신 에러: {e}")
                 raw_stocks = []
