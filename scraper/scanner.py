@@ -143,7 +143,7 @@ class DeepScanner:
                                 else:
                                     raise ai_e
                         
-                        time.sleep(7.5) # RPM 준수
+                        time.sleep(10.0)
                     except Exception as inner_e:
                         print(f"🚨 {s.get('hts_kor_isnm')} 분석 도중 에러 발생: {inner_e}", flush=True)
                         continue
