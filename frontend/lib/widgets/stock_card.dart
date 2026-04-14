@@ -72,7 +72,7 @@ class StockCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    _buildGradeBadge(isStrong),
+                    _buildGradeBadge(stock.grade),
                   ],
                 ),
 
@@ -122,18 +122,36 @@ class StockCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGradeBadge(bool isStrong) {
+  Widget _buildGradeBadge(StockGrade grade) {
+    Color color;
+    String text;
+    bool isS = grade == StockGrade.S;
+
+    switch (grade) {
+      case StockGrade.S:
+        color = Colors.redAccent;
+        text = "🔥 강력추천";
+        break;
+      case StockGrade.A:
+        color = Colors.blueAccent;
+        text = "⭐ 추천";
+        break;
+      default:
+        color = Colors.grey;
+        text = "📊 일반";
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isStrong ? Colors.redAccent : Colors.blueAccent.withOpacity(0.2),
+        color: isS ? color : color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: isStrong ? [BoxShadow(color: Colors.redAccent.withOpacity(0.4), blurRadius: 10)] : [],
+        boxShadow: isS ? [BoxShadow(color: color.withOpacity(0.4), blurRadius: 10)] : [],
       ),
       child: Text(
-        isStrong ? "🔥 강력추천" : "⭐ 추천",
+        text,
         style: TextStyle(
-          color: isStrong ? Colors.white : Colors.blueAccent,
+          color: isS ? Colors.white : color,
           fontSize: 12,
           fontWeight: FontWeight.w900,
         ),

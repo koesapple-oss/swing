@@ -116,13 +116,21 @@ class DeepScanner:
                                         if abs(score) < 0.1 and score != 0: break
                                     score = round(score, 2)
                                     
+                                    # 📊 등급 세분화 (더 엄격한 기준 적용)
+                                    if score >= 0.75:
+                                        grade = "S"
+                                    elif score >= 0.45:
+                                        grade = "A"
+                                    else:
+                                        grade = "B"
+                                    
                                     stock_data = {
                                         "code": code, "name": name, "price": price, "market": m_name,
                                         "volume": volume_money, "sentiment": score,
                                         "summary": analysis["summary"],
                                         "tech_reason": analysis["tech"],
                                         "ext_reason": analysis["ext"],
-                                        "grade": "S" if score > 0.7 else "A"
+                                        "grade": grade
                                     }
                                     self.push_one_to_server(stock_data)
                                     print(f"✅ 분석 완료: {name} (점수: {score})", flush=True)
