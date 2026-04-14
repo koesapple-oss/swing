@@ -44,8 +44,13 @@ class DeepScanner:
                 print(f"⚠️ 장전(새벽) 모드 감지: {m_name} 상위 종목 강제 분석 시뮬레이션 시작")
                 analysis_targets = raw_stocks[:3] # 각 시장별 상위 3개 강제 분석
             else:
-                # 실시간 거래대금이 있을 경우 10억 이상만 필터링
+                # 실시간 거래대금이 있을 경우 100억 이상만 필터링
                 analysis_targets = [s for s in raw_stocks[:15] if float(s.get('acml_tr_pbmn', 0)) >= 10_000_000_000]
+                
+                # 🌙 야간/데이터 부족 시 대응: 검색된 종목이 없으면 상위 2개 강제 포함
+                if not analysis_targets and raw_stocks:
+                    print(f"🌙 야간/조건미달 모드: {m_name} 상위 2개 종목 강제 분석")
+                    analysis_targets = raw_stocks[:2]
 
             for index, s in enumerate(analysis_targets):
                 name = s.get('hts_kor_isnm', 'Unknown')
@@ -53,11 +58,11 @@ class DeepScanner:
                 price = float(s.get('stck_prpr', 0))
                 volume_money = float(s.get('acml_tr_pbmn', 0))
                 
-                # 가상 거래대금 부여 (시뮬레이션용)
+                # 가상 거래대금 부여 (장후/장전 시뮬레이션용)
                 if volume_money == 0:
                     volume_money = (1000 - (index * 100)) * 100_000_000 # 1000억~800억 가상 부여
 
-                print(f"💎 AI 분석 ({index+1}/{len(analysis_targets)}): {name} ({volume_money/1e8:.1f}억 추정)")
+                print(f"💎 AI 분석 ({index+1}/{len(analysis_targets)}): {name}")
                 try:
                     analysis = self.analyze_deep_with_ai(name, price, volume_money, m_name)
                     if analysis:
@@ -78,11 +83,12 @@ class DeepScanner:
                             "grade": "S" if score > 0.7 else "A"
                         }
                         self.push_one_to_server(stock_data)
-                        print(f"✅ 분석 완료: {name} (점수: {analysis['score']})")
+                        print(f"✅ 분석 완료: {name} (점수: {score})")
                 except Exception as e:
                     print(f"🚨 {name} 에러: {e}")
                 
-                time.sleep(10.0)
+                # ⚡️ 빠른 확인을 위해 대기 시간 단축
+                time.sleep(2.0)
 
         try: 
             requests.post(f"{self.api_url}/end-scan", timeout=5)
