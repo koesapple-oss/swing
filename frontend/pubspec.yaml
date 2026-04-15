@@ -41,7 +41,7 @@ dependencies:
   syncfusion_flutter_charts: ^33.1.47
   riverpod: ^3.2.1
   http: ^1.6.0
-  flutter_gemma: ^1.0.5
+  flutter_gemma: ^0.13.2
   path_provider: ^2.1.2
   dio: ^5.4.1
 
