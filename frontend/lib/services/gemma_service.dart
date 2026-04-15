@@ -113,7 +113,7 @@ class GemmaNotifier extends Notifier<GemmaState> {
       
       // 응답 수집
       final responseBuffer = StringBuffer();
-      await for (final token in session.getResponseAsync()) {
+      await for (final token in session.generateChatResponseAsync()) {
         responseBuffer.write(token);
       }
       
