@@ -10,6 +10,8 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'dart:ui';
 import '../models/stock_model.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/analysis_provider.dart';
+import '../services/gemma_service.dart';
 
 class TradeView extends ConsumerWidget {
   final StockModel stock;
@@ -89,7 +91,7 @@ class _TradeViewContent extends ConsumerWidget {
                 ),
                 
                 const SizedBox(height: 30),
-                _buildDeepAnalysisCard(),
+                _buildGemmaAnalysisCard(ref),
                 const SizedBox(height: 20),
                 _buildBeginnerGuide(),
                 const SizedBox(height: 120),
@@ -176,19 +178,115 @@ class _TradeViewContent extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeepAnalysisCard() {
+  Widget _buildGemmaAnalysisCard(WidgetRef ref) {
+    final gemmaService = ref.watch(gemmaServiceProvider);
+    final analysisState = ref.watch(stockAnalysisProvider);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1C),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.orangeAccent.withOpacity(0.1)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _analysisSection("📊 기술적 분석 이유", stock.techReason, Colors.orangeAccent),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(width: 4, height: 18, decoration: BoxDecoration(color: Colors.orangeAccent, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(width: 12),
+                        Text("🤖 Gemma 4 로컬 심층 분석", style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ],
+                    ),
+                    if (!gemmaService.isInitialized && !gemmaService.isDownloading)
+                      TextButton(
+                        onPressed: () => gemmaService.initGemma(),
+                        child: const Text("모델 준비", style: TextStyle(color: Colors.orangeAccent, fontSize: 12)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                if (gemmaService.isDownloading)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("AI 모델 다운로드 중... (약 1.5GB)", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text("${(gemmaService.downloadProgress * 100).toInt()}%", style: const TextStyle(color: Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(value: gemmaService.downloadProgress, backgroundColor: Colors.white10, color: Colors.orangeAccent, minHeight: 6),
+                      ),
+                    ],
+                  )
+                else if (gemmaService.errorMessage != null)
+                  Text(
+                    "⚠️ ${gemmaService.errorMessage}",
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                  )
+                else if (analysisState.isLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(color: Colors.orangeAccent, strokeWidth: 2),
+                          SizedBox(height: 12),
+                          Text("Gemma가 차트를 분석 중입니다...", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (analysisState.hasValue && analysisState.value!.isNotEmpty)
+                  Text(
+                    analysisState.value!,
+                    style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.6, letterSpacing: 0.3),
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "디바이스 내부에서 Gemma 4 모델이 직접 차트와 수급을 분석합니다. Z Flip 5의 GPU 가속을 통해 보안 걱정 없이 빠른 추론이 가능합니다.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: gemmaService.isInitialized 
+                          ? () => ref.read(stockAnalysisProvider.notifier).analyzeStock(stock)
+                          : () => gemmaService.initGemma(),
+                        icon: Icon(gemmaService.isInitialized ? Icons.bolt_rounded : Icons.download_rounded, size: 18),
+                        label: Text(gemmaService.isInitialized ? "로컬 AI 분석 실행" : "AI 모델 활성화 (GPU)"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white10,
+                          foregroundColor: Colors.orangeAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+          
           const Divider(height: 1, color: Colors.white12),
-          _analysisSection("🌍 대외적/산업 요인", stock.extReason, Colors.blueAccent),
+          _analysisSection("📊 서버 기술적 분석", stock.techReason, Colors.blueAccent),
         ],
       ),
     );

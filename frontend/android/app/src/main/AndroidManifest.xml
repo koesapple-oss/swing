@@ -7,6 +7,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"> <!-- 🔥 HTTP 연결 허용 -->
+        
+        <!-- 🔥 GPU 가속을 위한 OpenCL 라이브러리 설정 -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false"/>
+        <uses-native-library android:name="libOpenCL-car.so" android:required="false"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
