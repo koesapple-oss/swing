@@ -13,9 +13,10 @@ class StockModel {
   final double sentimentScore;
   final String newsSummary;
   final String techReason;
+  final String maTrend; 
   final StockGrade grade;
   final Map<String, double> targets;
-  final DateTime timestamp; // 다시 추가
+  final DateTime timestamp;
 
   StockModel({
     required this.code,
@@ -26,6 +27,7 @@ class StockModel {
     required this.sentimentScore,
     required this.newsSummary,
     required this.techReason,
+    required this.maTrend,
     required this.grade,
     required this.targets,
     required this.timestamp,
@@ -41,8 +43,9 @@ class StockModel {
       sentimentScore: (json['sentiment_score'] ?? 0.0).toDouble(),
       newsSummary: json['news_summary'] ?? '',
       techReason: json['tech_reason'] ?? json['ext_reason'] ?? '',
+      maTrend: json['ma_trend'] ?? '데이터 없음',
       grade: _parseGrade(json['grade']),
-      targets: (json['targets'] as Map<String, dynamic>).map(
+      targets: (json['targets'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(key, (value ?? 0.0).toDouble()),
       ),
       timestamp: _parseTimestamp(json['server_time']),
@@ -50,8 +53,13 @@ class StockModel {
   }
 
   static StockGrade _parseGrade(dynamic gradeStr) {
-    if (gradeStr == 'S') return StockGrade.S;
-    if (gradeStr == 'A') return StockGrade.A;
+    if (gradeStr is String) {
+      switch (gradeStr) {
+        case 'S': return StockGrade.S;
+        case 'A': return StockGrade.A;
+        default: return StockGrade.B;
+      }
+    }
     return StockGrade.B;
   }
 
@@ -61,25 +69,5 @@ class StockModel {
       return DateTime.fromMillisecondsSinceEpoch((time * 1000).toInt());
     }
     return DateTime.now();
-  }
-}
-  static DateTime _parseTimestamp(dynamic timestamp) {
-    if (timestamp == null) return DateTime.now();
-    if (timestamp is num) {
-      // 서버에서 온 유닉스 타임스탬프 (초 단위)
-      return DateTime.fromMillisecondsSinceEpoch((timestamp * 1000).toInt());
-    }
-    if (timestamp is String) return DateTime.tryParse(timestamp) ?? DateTime.now();
-    return DateTime.now();
-  }
-
-
-  static StockGrade _parseGrade(String? grade) {
-    if (grade == null) return StockGrade.B;
-    switch (grade) {
-      case 'S': return StockGrade.S;
-      case 'A': return StockGrade.A;
-      default: return StockGrade.B;
-    }
   }
 }

@@ -29,7 +29,7 @@ final stockListProvider = FutureProvider<List<StockModel>>((ref) async {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      final list = data.map((json) => StockModel.fromMap(json)).toList();
+      final list = data.map((json) => StockModel.fromJson(json as Map<String, dynamic>)).toList();
       
       // 정렬 로직: S급 우선 -> AI 점수 내림차순
       list.sort((a, b) {
