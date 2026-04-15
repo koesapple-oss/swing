@@ -9,15 +9,13 @@ class StockModel {
   final String name;
   final String market;
   final double currentPrice;
-  final double volume; 
-  final String maTrend;
+  final double volume;
   final double sentimentScore;
   final String newsSummary;
-  final String techReason; 
-  final String extReason;  
+  final String techReason;
   final StockGrade grade;
   final Map<String, double> targets;
-  final DateTime timestamp;
+  final DateTime timestamp; // 다시 추가
 
   StockModel({
     required this.code,
@@ -25,36 +23,46 @@ class StockModel {
     required this.market,
     required this.currentPrice,
     required this.volume,
-    required this.maTrend,
     required this.sentimentScore,
     required this.newsSummary,
     required this.techReason,
-    required this.extReason,
     required this.grade,
     required this.targets,
     required this.timestamp,
   });
 
-  factory StockModel.fromMap(Map<String, dynamic> data) {
+  factory StockModel.fromJson(Map<String, dynamic> json) {
     return StockModel(
-      code: (data['code'] ?? '').toString(),
-      name: (data['name'] ?? '').toString(),
-      market: (data['market'] ?? '').toString(),
-      currentPrice: (data['current_price'] ?? 0).toDouble(),
-      volume: (data['volume'] ?? 0).toDouble(),
-      maTrend: (data['ma_trend'] ?? '').toString(),
-      sentimentScore: (data['sentiment_score'] ?? 0).toDouble(),
-      newsSummary: (data['news_summary'] ?? '').toString(),
-      techReason: (data['tech_reason'] ?? '기술적 분석 중...').toString(),
-      extReason: (data['ext_reason'] ?? '대외 전략 분석 중...').toString(),
-      grade: _parseGrade(data['grade']?.toString()),
-      targets: Map<String, dynamic>.from(data['targets'] ?? {}).map(
-        (key, value) => MapEntry(key, (value ?? 0).toDouble())
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      market: json['market'] ?? '',
+      currentPrice: (json['current_price'] ?? 0.0).toDouble(),
+      volume: (json['volume'] ?? 0.0).toDouble(),
+      sentimentScore: (json['sentiment_score'] ?? 0.0).toDouble(),
+      newsSummary: json['news_summary'] ?? '',
+      techReason: json['tech_reason'] ?? json['ext_reason'] ?? '',
+      grade: _parseGrade(json['grade']),
+      targets: (json['targets'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(key, (value ?? 0.0).toDouble()),
       ),
-      timestamp: _parseTimestamp(data['server_time']),
+      timestamp: _parseTimestamp(json['server_time']),
     );
   }
 
+  static StockGrade _parseGrade(dynamic gradeStr) {
+    if (gradeStr == 'S') return StockGrade.S;
+    if (gradeStr == 'A') return StockGrade.A;
+    return StockGrade.B;
+  }
+
+  static DateTime _parseTimestamp(dynamic time) {
+    if (time == null) return DateTime.now();
+    if (time is num) {
+      return DateTime.fromMillisecondsSinceEpoch((time * 1000).toInt());
+    }
+    return DateTime.now();
+  }
+}
   static DateTime _parseTimestamp(dynamic timestamp) {
     if (timestamp == null) return DateTime.now();
     if (timestamp is num) {
