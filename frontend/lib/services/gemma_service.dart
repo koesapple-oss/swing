@@ -5,26 +5,48 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 
-class GemmaService extends ChangeNotifier {
-  // Gemma 4 2B IT (Instruction Tuned) GPU 최적화 모델 URL (2026 최신)
+// Gemma의 상태를 관리하기 위한 클래스
+class GemmaState {
+  final bool isInitialized;
+  final bool isDownloading;
+  final double downloadProgress;
+  final String? errorMessage;
+
+  GemmaState({
+    this.isInitialized = false,
+    this.isDownloading = false,
+    this.downloadProgress = 0,
+    this.errorMessage,
+  });
+
+  GemmaState copyWith({
+    bool? isInitialized,
+    bool? isDownloading,
+    double? downloadProgress,
+    String? errorMessage,
+  }) {
+    return GemmaState(
+      isInitialized: isInitialized ?? this.isInitialized,
+      isDownloading: isDownloading ?? this.isDownloading,
+      downloadProgress: downloadProgress ?? this.downloadProgress,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
+}
+
+class GemmaNotifier extends Notifier<GemmaState> {
+  // Gemma 4 2B IT (Instruction Tuned) GPU 최적화 모델 URL
   static const String _modelUrl = "https://huggingface.co/google/gemma-4-2b-it-gpu-int4/resolve/main/gemma-4-2b-it-gpu-int4.task";
   static const String _modelFileName = "gemma4_2b_it.task";
   
-  bool _isInitialized = false;
-  bool get isInitialized => _isInitialized;
+  GemmaModel? _model;
 
-  double _downloadProgress = 0;
-  double get downloadProgress => _downloadProgress;
-
-  bool _isDownloading = false;
-  bool get isDownloading => _isDownloading;
-
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
+  @override
+  GemmaState build() => GemmaState();
 
   /// 기기에 모델이 있는지 확인하고, 없으면 다운로드 후 초기화
   Future<void> initGemma() async {
-    if (_isInitialized) return;
+    if (state.isInitialized) return;
 
     try {
       final directory = await getApplicationSupportDirectory();
@@ -35,33 +57,24 @@ class GemmaService extends ChangeNotifier {
       if (!await modelFile.exists()) {
         print("📂 [Gemma] 모델 파일을 찾을 수 없습니다. 다운로드를 시작합니다...");
         await _downloadModel(modelPath);
-      } else {
-        print("📂 [Gemma] 기존 모델 파일을 찾았습니다: $modelPath");
       }
 
-      // 2. Gemma 초기화 (Z Flip 5 - GPU 가속 설정)
-      print("🚀 [Gemma] GPU(PreferredBackend.gpu) 모드로 초기화 중...");
-      await FlutterGemma.instance.init(
-        modelPath: modelPath,
+      // 2. 최신 API: getActiveModel 사용 (GPU 가속)
+      print("🚀 [Gemma] GPU(PreferredBackend.gpu) 모드로 모델 로드 중...");
+      _model = await FlutterGemma.getActiveModel(
         preferredBackend: PreferredBackend.gpu,
       );
       
-      _isInitialized = true;
-      _errorMessage = null;
+      state = state.copyWith(isInitialized: true, errorMessage: null);
       print("✅ [Gemma] 로컬 모델 초기화 성공");
-      notifyListeners();
     } catch (e) {
-      _errorMessage = "Gemma 초기화 실패: $e";
+      state = state.copyWith(errorMessage: "Gemma 초기화 실패: $e");
       print("❌ [Gemma] 초기화 오류: $e");
-      notifyListeners();
     }
   }
 
-  /// DIO를 사용한 모델 파일 다운로드 로직
   Future<void> _downloadModel(String savePath) async {
-    _isDownloading = true;
-    _downloadProgress = 0;
-    notifyListeners();
+    state = state.copyWith(isDownloading: true, downloadProgress: 0);
     
     final dio = Dio();
     try {
@@ -70,44 +83,46 @@ class GemmaService extends ChangeNotifier {
         savePath,
         onReceiveProgress: (count, total) {
           if (total != -1) {
-            _downloadProgress = count / total;
-            notifyListeners();
+            state = state.copyWith(downloadProgress: count / total);
           }
         },
       );
-      print("✅ [Gemma] 다운로드 완료: $savePath");
     } catch (e) {
-      print("❌ [Gemma] 다운로드 실패: $e");
-      _errorMessage = "모델 다운로드 중 오류가 발생했습니다.";
+      state = state.copyWith(errorMessage: "모델 다운로드 중 오류 발생");
       rethrow;
     } finally {
-      _isDownloading = false;
-      notifyListeners();
+      state = state.copyWith(isDownloading: false);
     }
   }
 
-  /// 텍스트 프롬프트를 전달하여 로컬 추론 결과 반환
+  /// 텍스트 프롬프트를 전달하여 로컬 추론 결과 반환 (세션 기반)
   Future<String> getResponse(String prompt) async {
-    if (!_isInitialized) {
+    if (!state.isInitialized || _model == null) {
       await initGemma();
-      if (!_isInitialized) return "AI 모델이 초기화되지 않았습니다.";
+      if (!state.isInitialized) return "AI 모델이 초기화되지 않았습니다.";
     }
     
     try {
       print("🧠 [Gemma] 로컬 추론 시작...");
-      final startTime = DateTime.now();
       
-      final response = await FlutterGemma.instance.getCompletion(prompt: prompt);
+      // 최신 API: 세션 생성
+      final session = await _model!.createSession();
       
-      final duration = DateTime.now().difference(startTime);
-      print("⏱ [Gemma] 추론 완료 (${duration.inSeconds}초 소요)");
+      // 쿼리 추가
+      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
       
-      return response ?? "분석 결과를 생성할 수 없습니다.";
+      // 응답 수집 (스트리밍을 하나의 문자열로 합침)
+      final responseBuffer = StringBuffer();
+      await for (final token in session.getResponseAsync()) {
+        responseBuffer.write(token);
+      }
+      
+      await session.close(); // 세션 종료
+      return responseBuffer.toString();
     } catch (e) {
-      print("❌ [Gemma] 추론 중 오류: $e");
       return "로컬 분석 오류: $e";
     }
   }
 }
 
-final gemmaServiceProvider = ChangeNotifierProvider((ref) => GemmaService());
+final gemmaServiceProvider = NotifierProvider<GemmaNotifier, GemmaState>(() => GemmaNotifier());

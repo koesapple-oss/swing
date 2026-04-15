@@ -209,7 +209,7 @@ class _TradeViewContent extends ConsumerWidget {
                     ),
                     if (!gemmaService.isInitialized && !gemmaService.isDownloading)
                       TextButton(
-                        onPressed: () => gemmaService.initGemma(),
+                        onPressed: () => ref.read(gemmaServiceProvider.notifier).initGemma(),
                         child: const Text("모델 준비", style: TextStyle(color: Colors.orangeAccent, fontSize: 12)),
                       ),
                   ],
@@ -239,7 +239,7 @@ class _TradeViewContent extends ConsumerWidget {
                     "⚠️ ${gemmaService.errorMessage}",
                     style: const TextStyle(color: Colors.redAccent, fontSize: 13),
                   )
-                else if (analysisState.isLoading)
+                else if (analysisState is AsyncLoading)
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
@@ -247,14 +247,14 @@ class _TradeViewContent extends ConsumerWidget {
                         children: [
                           CircularProgressIndicator(color: Colors.orangeAccent, strokeWidth: 2),
                           SizedBox(height: 12),
-                          Text("Gemma가 차트를 분석 중입니다...", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text("Gemma 4가 차트를 분석 중입니다...", style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ),
                   )
-                else if (analysisState.hasValue && analysisState.value!.isNotEmpty)
+                else if (analysisState is AsyncData && analysisState.value.isNotEmpty)
                   Text(
-                    analysisState.value!,
+                    analysisState.value,
                     style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.6, letterSpacing: 0.3),
                   )
                 else
@@ -269,7 +269,7 @@ class _TradeViewContent extends ConsumerWidget {
                       ElevatedButton.icon(
                         onPressed: gemmaService.isInitialized 
                           ? () => ref.read(stockAnalysisProvider.notifier).analyzeStock(stock)
-                          : () => gemmaService.initGemma(),
+                          : () => ref.read(gemmaServiceProvider.notifier).initGemma(),
                         icon: Icon(gemmaService.isInitialized ? Icons.bolt_rounded : Icons.download_rounded, size: 18),
                         label: Text(gemmaService.isInitialized ? "로컬 AI 분석 실행" : "AI 모델 활성화 (GPU)"),
                         style: ElevatedButton.styleFrom(
