@@ -252,9 +252,9 @@ class _TradeViewContent extends ConsumerWidget {
                       ),
                     ),
                   )
-                else if (analysisState is AsyncData && analysisState.value.isNotEmpty)
+                else if (analysisState.hasValue && analysisState.requireValue.isNotEmpty)
                   Text(
-                    analysisState.value,
+                    analysisState.requireValue,
                     style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.6, letterSpacing: 0.3),
                   )
                 else

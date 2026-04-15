@@ -4,19 +4,23 @@ import '../models/stock_model.dart';
 import '../services/gemma_service.dart';
 
 // Riverpod 3.0의 AsyncNotifier를 사용하여 상태 관리 최신화
-class StockAnalysisNotifier extends AutoDisposeAsyncNotifier<String> {
+class StockAnalysisNotifier extends AsyncNotifier<String> {
   @override
   FutureOr<String> build() {
-    return ''; // 초기 상태는 빈 문자열
+    return ''; // 초기 상태
   }
 
   Future<void> analyzeStock(StockModel stock) async {
-    // 로딩 상태 시작
     state = const AsyncLoading();
     
-    final gemmaService = ref.read(gemmaServiceProvider.notifier);
+    final gemmaState = ref.read(gemmaServiceProvider);
+    if (!gemmaState.isInitialized) {
+      state = const AsyncData("사용 전 AI 모델 활성화가 필요합니다.");
+      return;
+    }
+
+    final gemmaNotifier = ref.read(gemmaServiceProvider.notifier);
     
-    // 로컬 Gemma 모델용 프롬프트
     final prompt = """
 주식 투자 전문가로서 아래 데이터를 분석하고 한국어로 답변하세요.
 종목명: ${stock.name} (${stock.code})
@@ -24,17 +28,16 @@ class StockAnalysisNotifier extends AutoDisposeAsyncNotifier<String> {
 추세: ${stock.maTrend}
 뉴스 요약: ${stock.newsSummary}
 
-기존 분석 기반으로 투자 매력도와 리스크를 300자 이내로 제안하세요.
+전문가적 투자 매력도를 300자 이내로 제안하세요.
 """;
 
-    // 추론 수행 및 상태 업데이트
     state = await AsyncValue.guard(() async {
-      return await gemmaService.getResponse(prompt);
+      return await gemmaNotifier.getResponse(prompt);
     });
   }
 }
 
-// 프로바이더 정의 (Riverpod 3.0 NotifierProvider)
+// 프로바이더 정의
 final stockAnalysisProvider = AsyncNotifierProvider.autoDispose<StockAnalysisNotifier, String>(() {
   return StockAnalysisNotifier();
 });

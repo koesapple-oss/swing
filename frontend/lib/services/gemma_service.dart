@@ -39,7 +39,7 @@ class GemmaNotifier extends Notifier<GemmaState> {
   static const String _modelUrl = "https://huggingface.co/google/gemma-4-2b-it-gpu-int4/resolve/main/gemma-4-2b-it-gpu-int4.task";
   static const String _modelFileName = "gemma4_2b_it.task";
   
-  GemmaModel? _model;
+  InferenceModel? _model;
 
   @override
   GemmaState build() => GemmaState();
@@ -105,19 +105,19 @@ class GemmaNotifier extends Notifier<GemmaState> {
     try {
       print("🧠 [Gemma] 로컬 추론 시작...");
       
-      // 최신 API: 세션 생성
-      final session = await _model!.createSession();
+      // 최신 API: 채팅 세션 생성
+      final session = await _model!.createChat();
       
       // 쿼리 추가
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
       
-      // 응답 수집 (스트리밍을 하나의 문자열로 합침)
+      // 응답 수집
       final responseBuffer = StringBuffer();
       await for (final token in session.getResponseAsync()) {
         responseBuffer.write(token);
       }
       
-      await session.close(); // 세션 종료
+      await session.close(); 
       return responseBuffer.toString();
     } catch (e) {
       return "로컬 분석 오류: $e";
