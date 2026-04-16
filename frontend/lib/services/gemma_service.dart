@@ -35,9 +35,9 @@ class GemmaState {
 }
 
 class GemmaNotifier extends Notifier<GemmaState> {
-  // 🚀 2026년 4월 출시된 최신 Gemma 4 E2B-it 모델 (Edge/Mobile 최적화)
-  static const String _modelUrl = "http://192.168.199.107:8000/static/gemma4-e2b-it.task";
-  static const String _modelFileName = "gemma4-e2b-it.task";
+  // 🚀 Google LiteRT(공식)에서 배포하는 Gemma 4 E2B-it 모델 경로
+  static const String _modelUrl = "http://192.168.199.107:8000/static/gemma-4-E2B-it-web.task";
+  static const String _modelFileName = "gemma-4-E2B-it-web.task";
   
   InferenceModel? _model;
 
