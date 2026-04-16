@@ -35,9 +35,9 @@ class GemmaState {
 }
 
 class GemmaNotifier extends Notifier<GemmaState> {
-  // Gemma 4 2B IT (Instruction Tuned) GPU 최적화 모델 URL
-  static const String _modelUrl = "https://huggingface.co/google/gemma-4-2b-it-gpu-int4/resolve/main/gemma-4-2b-it-gpu-int4.task";
-  static const String _modelFileName = "gemma4_2b_it.task";
+  // 🚀 Proxmox 서버에서 내부망을 통해 초고속으로 모델을 다운로드하도록 설정
+  static const String _modelUrl = "http://192.168.199.107:8000/static/gemma-2b-it-gpu-int4.task";
+  static const String _modelFileName = "gemma-2b-it-gpu-int4.task";
   
   InferenceModel? _model;
 

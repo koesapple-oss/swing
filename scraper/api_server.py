@@ -6,6 +6,7 @@ from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
+from fastapi.staticfiles import StaticFiles # 추가
 import uvicorn
 import time
 import json
@@ -13,6 +14,13 @@ import os
 import asyncio
 
 app = FastAPI(title="Swing Trading Local API")
+
+# 🚀 모델 파일 등을 다운로드할 수 있도록 /static 경로 활성화
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
+
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 app.add_middleware(
     CORSMiddleware,
